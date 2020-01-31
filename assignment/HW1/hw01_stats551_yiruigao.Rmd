@@ -1,0 +1,230 @@
+---
+title: "Stats 551 Homework 1"
+author: "Yirui Gao"
+date: "Jan 27"
+output:
+  pdf_document:
+    toc: yes
+  html_document:
+    theme: flatly
+    toc: yes
+csl: ecology.csl
+---
+
+\newcommand\prob{\mathbb{P}}
+\newcommand\E{\mathbb{E}}
+\newcommand\var{\mathrm{Var}}
+\newcommand\cov{\mathrm{Cov}}
+
+
+**<big> Question 1. Pratice of Bayes Formula </big>** 
+
+***(1)***
+The prior for this problem is $Pr(\theta = 1) = Pr(\theta = 2) = \frac{1}{2}$ and the likelihood is still denoted as $P(y|\theta)$. The marginal probability density for $y$ is:
+$$\begin{aligned}
+  p(y) &= p(\theta = 1)p(y|\theta = 1) + p(\theta = 2)p(y|\theta = 2) \\
+      &= \frac{1}{2}\frac{1}{\sqrt{2\pi}\sigma}\exp(-\frac{(y - \mu_1)^2}{2\sigma^2}) + \frac{1}{2}\frac{1}{\sqrt{2\pi}\sigma}\exp(-\frac{(y - \mu_2)^2}{2\sigma^2}) \\
+      &= \frac{1}{2\sigma\sqrt{2\pi}}[\exp(-\frac{(y - \mu_1)^2}{2\sigma^2}) + \exp(-\frac{(y - \mu_2)^2}{2\sigma^2})].
+\end{aligned}$$
+By substituting $\sigma$ with 2 and two means of 1 and 2, the formula gets further simplied:
+$$\begin{aligned}
+  p(y) &= \frac{1}{4\sqrt{2\pi}}[\exp(-\frac{(y - 1)^2}{8}) + \exp(-\frac{(y - 2)^2}{8})].
+\end{aligned}$$
+```{r warning=FALSE, fig.width=8, fig.height=6}
+y <- seq(-10, 10, by=0.1)
+f <- function(y) {
+  result <- (exp(-(y-1)^2/8) + exp(-(y-2)^2/8))/(4*sqrt(2*pi))
+  return(result)
+}
+py <- lapply(y, f)
+plot(y, py, col = "dark green", type = 'l', lwd = 2, 
+     main = "Sketch of marginal probability density with sigma = 2")
+
+```
+
+***(2)***
+Use R command and the function from (1), plug in $y = 1$ and we can get $P(y = 1) = 0.1877519$.
+```{r, warning=FALSE}
+f(1)
+```
+When $\theta$ equals 1, the mean is 1 and then $p(y = 1 | \theta = 1) = \frac{1}{2\sqrt{2\pi}} = 0.1994711$.
+Based on the Bayes rule, we can get the posterior density
+$$\begin{aligned}
+  Pr(\theta = 1 | y = 1) &= \frac{p(\theta = 1)p(y = 1 | \theta = 1)}{p(y = 1)} \\
+                        &= \frac{0.5 * 0.1994711}{0.1877519} \\
+                        &= 0.5312094.
+\end{aligned}$$
+
+***(3)***
+Since we have already derived the distribution for the marginal pdf $p(y) = \frac{1}{2\sigma\sqrt{2\pi}}[\exp(-\frac{(y - 1)^2}{2\sigma^2}) + \exp(-\frac{(y - 2)^2}{2\sigma^2})]$, we can use the Bayes rule to derive correspondingly the posterior distribution for $\theta = 1$ and $\theta = 2$:
+$$ p(\theta|y) = \frac{p(\theta)p(y|\theta)}{p(y)} = \frac{exp(-\frac{(y - \theta)^2}{2\sigma^2})}{\exp(-\frac{(y - 1)^2}{2\sigma^2}) + \exp(-\frac{(y - 2)^2}{2\sigma^2})}, $$
+$$ p(\theta = 1|y) = \frac{exp(-\frac{(y -1)^2}{2\sigma^2})}{\exp(-\frac{(y - 1)^2}{2\sigma^2}) + \exp(-\frac{(y - 2)^2}{2\sigma^2})} = \frac{1}{1 + exp(\frac{2y - 3}{2\sigma^2})}, $$
+$$ p(\theta = 2|y) = \frac{exp(-\frac{(y -2)^2}{2\sigma^2})}{\exp(-\frac{(y - 1)^2}{2\sigma^2}) + \exp(-\frac{(y - 2)^2}{2\sigma^2})} = \frac{1}{1 + exp(\frac{-2y + 3}{2\sigma^2})}. $$
+
+So we can see that when $\sigma$ is increased, the posterior probabilities will be more and more close to $\frac{1}{2}$. Especially when $\sigma$ comes to a very huge number, the posterior probability will be the prior probability that $p(\theta = 1 |y) = p(\theta = 2|y) = p(\theta) = \frac{1}{2}$.
+
+When $\sigma$ is decreasing, the posterior probabilities will be more and more close to 1. So for $p(\theta = 1|y)$, when $y < \frac{3}{2}$, $p(\theta = 1|y)$ will appraoch 1 as $\theta$ decreases and comes to 1 when $\theta = 0$. At this time $p(\theta = 2|y) = 0$, so all the posterior distribution would incline to $\theta = 1$. On the contrary, when $y > \frac{3}{2}$, $p(\theta = 2|y)$ will appraoch 1 as $\theta$ decreases and comes to 1 when $\theta = 0$. At this time $p(\theta = 1|y) = 0$, so all the posterior distribution would incline to $\theta = 2$. 
+
+
+
+
+
+**<big> Question 2. Normal distribution with unknown mean </big>** 
+
+***(1)***
+For this problem, the prior distribution for $\theta$ is $p(\theta) \sim \mathbb{N}(180, 40^2)$, here denote $\mu_0 = 180$ as the mean and $\tau_0 = 40$ as the standard deviation. To get the posterior distribution $p(\theta|y_1,y_2,...y_n)$, we need to calculate the likelihood:
+$$p(y_1,y_2,...y_n|\theta) = \prod_{i=1}^n.\frac{1}{\sqrt{2\pi}\sigma} \exp(-\frac{(y_i - \theta)^2}{2\sigma^2}),$$
+where $\sigma = 20$ stated in the problem.
+
+Thus the posterior follows another normal distribution $p(\theta|\textbf{y}) \propto \mathbb{N}(\mu_n, \tau_n^2)$ as follows:
+$$\begin{aligned}
+  p(\theta|\textbf{y}) &\propto p(\theta)p(\textbf{y}|\theta) \\
+    &\propto \exp(-\frac{1}{2}[\frac{\sum_{i=1}^n(y_i - \theta)^2}{\sigma^2}+\frac{(\theta - \mu_0)^2}{\tau_0^2}]) \\
+    &\propto \exp(-\frac{1}{2\tau_n^2}(\theta - \mu_n)^2).
+\end{aligned}$$
+
+Given the parameters from the problem, we can derive the weighted average of the prior mean and the observed values as
+$$\begin{aligned}
+\mu_n &= \frac{\frac{\mu_0}{\tau_0^2} + \frac{n\overline{y}}{\sigma^2}}{\frac{1}{\tau_0^2} + \frac{n}{\sigma^2}} \\
+      &= \frac{600n + 180}{4n+1},
+\end{aligned}$$
+$$\begin{aligned}
+\tau_n^2 &= \frac{1}{\frac{1}{\tau_0^2} + \frac{n}{\sigma^2}} \\
+      &= \frac{1600}{4n+1}.
+\end{aligned}$$
+So, the posterior distribution for $\theta$ is $p(\theta|\textbf{y}) \propto \mathbb{N}(\frac{600n + 180}{4n+1}, \frac{1600}{4n+1})$.
+
+***(2)***
+According to the definition of posterior predictive distribution $p(\tilde{y}|\textbf{y}) = \int_{\theta} p(\tilde{y}|\theta)p(\theta|\textbf{y}) d\theta$, since we have already derived the posterior distribution for $\theta$, so 
+$$\begin{aligned}
+p(\tilde{y}|\textbf{y}) &= \int_{\theta} p(\tilde{y}|\theta)p(\theta|\textbf{y}) d\theta \\
+      &= \int_{\theta} \mathbb{N}(\theta, 20^2)\mathbb{N}(180, 40^2) d\theta \\
+      &\sim \mathbb{N}(\theta', \sigma'^{2}).
+\end{aligned}$$
+Recall that $E(\tilde{y}|\theta) = \theta$, $\var(\tilde{y}|\theta) = \sigma^2$. Then
+$$ E(\tilde{y}|\textbf{y}) = E[\var(\tilde{y}|\theta, \textbf{y})|\textbf{y}] = E(\theta|\textbf{y}) = \mu_n,$$
+$$ \var(\tilde{y}|\textbf{y}) = E[E(\tilde{y}|\theta, \textbf{y})|\textbf{y}] + \var[E(\tilde{y}|\theta, \textbf{y})|\textbf{y}= E(\sigma^2|\textbf{y}) + \var(\theta|\textbf{y}) = \sigma^2 + \tau_n^2.$$
+
+Therefore, after plug in the corresponding values, the posterior predictive distribution for $\tilde{y}$ is:
+$$\tilde{y}|\textbf{y} \sim \mathbb{N}(\frac{600n+180}{4n+1}, \frac{1600n+2000}{4n+1}).$$ 
+
+
+***(3)***
+The posterior interval for $\theta$ for $n = 10$ and $n = 100$ can be found by implementing the following R code:
+```{r posterior_interval}
+mean <- function(n) {
+  result <- (600 * n + 180) / (4*n + 1)
+  return(result)
+}
+variance <- function(n){
+  result <- 1600 / (4 * n + 1)
+  return (result)
+}
+
+n1 <- 10
+mysamples_1 <- rnorm(10000, mean = mean(n1), sd = sqrt(variance(n1)))
+print("The 95% posterior interval for theta when n = 10 is: ")
+quantile(mysamples_1, c(0.025, 0.975))
+
+n2 <- 100
+mysamples_2 <- rnorm(10000, mean = mean(n2), sd = sqrt(variance(n2)))
+print("The 95% posterior interval for theta when n = 100 is: ")
+quantile(mysamples_2, c(0.025, 0.975))
+
+```
+Similarly, the posterior predictive interval for $\tilde{y}$ for $n = 10$ and $n = 100$ can be found by implementing the following R code:
+```{r posterior_predictive_interval}
+mean_y <- function(n) {
+  result <- (600 * n + 180) / (4*n + 1)
+  return(result)
+}
+variance_y <- function(n){
+  result <- (1600 * n + 2000) / (4 * n + 1)
+  return (result)
+}
+
+n1 <- 10
+mysamples_1 <- rnorm(10000, mean = mean_y(n1), sd = sqrt(variance_y(n1)))
+print("The 95% posterior interval for y_pre when n = 10 is: ")
+quantile(mysamples_1, c(0.025, 0.975))
+
+n2 <- 100
+mysamples_2 <- rnorm(10000, mean = mean_y(n2), sd = sqrt(variance_y(n2)))
+print("The 95% posterior interval for y_pre when n = 100 is: ")
+quantile(mysamples_2, c(0.025, 0.975))
+
+```
+
+
+**<big> Question 3. Nonconjugate single parameter model </big>** 
+
+***(1)***
+Given that the prior is triangular shaped distribution and the likelihood to be the binomial distribution, we also know the distribution of the likelihood $p(y|\theta) = \theta^y(1-\theta)^{n-y}$ since $y|\theta \sim Binomial(500, \theta)$, here $n = 500$.
+
+To get the unnormalized posterior density function, we can just multiply the likelihood with the triangular prior, with the given $y = 285$:
+$$ p(\theta|y)_{unnorm} = p(\theta)p(y|\theta) = p(\theta)\theta^y(1 - \theta)^{(n - y)},$$
+where $p(\theta)$ should be replaced by the given triangle function.
+
+Now use R codes to compute the unnormalized posterior density function on a grid given $m = 100$:
+```{r nonconjugate}
+
+# Define the prior distribution:
+triangle.prior <- function(theta){
+  if(theta >= 0 && theta < 0.25){
+    return (8 * theta)
+  }
+  else if(theta >= 0.25 && theta <= 1){
+    return (8 * (1 - theta) / 3)
+  }
+  else return (0)
+}
+
+# Define the unnormalized posterior distribution:
+unnorm.posterior <- function(theta, n, y){
+  posterior <- (theta^y) * (1 - theta)^(n - y) * triangle.prior(theta)
+  return (posterior)
+}
+
+# Grid approximation for unnormalized posteriors:
+m <- 100
+grid.points <- seq(0, 1, length.out = m)
+unnorm.points = unnorm.posterior(grid.points, 500, 285)
+unnorm.points
+```
+
+Next, use grid approximation again, to compute the normalized posterior density function, we need to estimate the normalizing constant denoted as $c$, where $c$ represents the area under the unnormalized posterior. And here $c$ can be estimated by the sum of the areas of the small rectangles of width $\frac{1}{m}$ and height at the unnormalized posteior ordinates, accoridng to the resources found at \url{http://patricklam.org/teaching/grid_print.pdf}:
+$$ c \approx \sum_{i = 1}^m\frac{1}{m}p(y|\theta_0 + \frac{i}{m})p(\theta_0 + \frac{i}{m}).$$
+To calculate and plot, use the following R code:
+```{r}
+# Normalized constant:
+c <- sum(unnorm.points / m)
+norm.points <- unnorm.points / c
+norm.points
+
+# Plot the normalized posterior density function:
+plot(x = grid.points, y = norm.points, type = 'l', col = 'red', 
+     xlab = 'theta', ylab = 'normalized posterior density', 
+     main = 'Normalized posterior density function')
+
+```
+
+
+***(2)***
+```{r}
+set.seed(123456789)
+
+N = 10000
+samples <- sample(grid.points, size = N, replace = TRUE, prob = norm.points/sum(norm.points))
+hist(samples, freq = FALSE, xlab = 'theta', main = 'Histogram of sampling theta')
+lines(grid.points, norm.points/(sum(norm.points) * (grid.points[2]-grid.points[1])), col = "red")
+
+```
+
+
+
+
+
+
+
+
+
