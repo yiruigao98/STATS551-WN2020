@@ -32,3 +32,14 @@ sd(mysamples_v2)
 
 quantile(mysamples_v2, c(0.025, 0.975))
 
+
+M <- 10000
+yseq <- rt(n = M, df = 29) * sqrt(1/6) + 10
+mean(yseq)
+sum <- 0
+for(i in 1:length(yseq)) {
+  sum <- sum + (yseq[i] - mean(yseq))^2
+}
+sum / (M-1)
+
+
